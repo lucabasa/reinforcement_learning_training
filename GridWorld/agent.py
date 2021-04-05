@@ -6,15 +6,15 @@ from GridWorld.board import State
 import numpy as np
 
 class Agent:
-    def __init__(self, state=None, verbose=False):
+    def __init__(self, state=None, lr=0.2, exp_rate=0.3, verbose=False):
         self.states = []
         self.actions = ["up", "down", "left", "right"]
         if state is None:
             state = State()
         self.State = state
         self.isEnd = self.State.isEnd
-        self.lr = 0.2
-        self.exp_rate = 0.3
+        self.lr = lr
+        self.exp_rate = exp_rate
         self.orig_state = state
         self.verbose = verbose
         
