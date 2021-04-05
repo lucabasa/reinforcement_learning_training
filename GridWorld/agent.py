@@ -65,7 +65,7 @@ class Agent:
         if self.verbose:
             print("Game End Reward", reward)
         for s in reversed(self.states):
-            reward = self.state_values[s] + self.lr*(reward - self.state_values[s])
+            reward = self.state_values[s] + self.lr * (reward - self.state_values[s])
             self.state_values[s] = round(reward, 3)
         self.reset()
         
@@ -111,6 +111,9 @@ class Agent:
 class Agent_Q(Agent):
     def __init__(self, *, state=None, decay_gamma=0.9, lr=0.2, exp_rate=0.3, verbose=False):
         super().__init__()
+        if state is None:
+            state = State(deterministic=False)
+        self.State = state
         self.decay_gamma = decay_gamma
         
         # initial Q values
@@ -138,6 +141,8 @@ class Agent_Q(Agent):
                     action = a
                     mx_nxt_reward = nxt_reward
             # print("current pos: {}, greedy aciton: {}".format(self.State.state, action))
+        if action == '':
+            action = np.random.choice(self.actions)
         return action
     
     
