@@ -6,36 +6,44 @@ import numpy as np
 
 
 class State:
-    def __init__(self, BOARD_ROWS=3, BOARD_COLS=4, 
-                 state=(0, 0), # default ignored in the init
-                 WIN_STATE=(0, 3), LOSE_STATE=(1, 3), # default ignored in the init
-                 FORBIDDEN_BLOCKS=(1, 1),
-                 DETERMINISTIC=True):
+    def __init__(self, rows=3, cols=4, 
+                 state=None, # default ignored in the init
+                 win_state=None, lose_state=None, # default ignored in the init
+                 forbidden_blocks=None,
+                 deterministic=True, **kwargs):
         
-        self.board = np.zeros([BOARD_ROWS, BOARD_COLS])
-        self.rows = BOARD_ROWS
-        self.cols = BOARD_COLS
-        self.win_state = (0, BOARD_COLS-1)
-        self.lose_state = (1, BOARD_COLS-1)
-        self.state = (BOARD_ROWS-1, 0)
+        if win_state is None:
+            win_state = (0, cols-1)
+        if lose_state is None:
+            lose_state = (1, cols-1)
+        if state is None:
+            state = (rows-1, 0)
+        if forbidden_blocks is None:
+            forbidden_blocks = []
         
-        if not isinstance(FORBIDDEN_BLOCKS, list):
-            FORBIDDEN_BLOCKS = [FORBIDDEN_BLOCKS]
-        if self.win_state in FORBIDDEN_BLOCKS:
-            FORBIDDEN_BLOCKS = [b for b in FORBIDDEN_BLOCKS if b != self.win_state]
-        if self.lose_state in FORBIDDEN_BLOCKS:
-            FORBIDDEN_BLOCKS = [b for b in FORBIDDEN_BLOCKS if b != self.lose_state]
-        if self.state in FORBIDDEN_BLOCKS:
-            FORBIDDEN_BLOCKS = [b for b in FORBIDDEN_BLOCKS if b != self.state] 
-        for block in FORBIDDEN_BLOCKS:
+        self.rows = rows
+        self.cols = cols
+        self.win_state = win_state
+        self.lose_state = lose_state
+        self.state = state
+        self.board = np.zeros([rows, cols])
+        
+        if not isinstance(forbidden_blocks, list):
+            forbidden_blocks = [forbidden_blocks]
+        if self.win_state in forbidden_blocks:
+            forbidden_blocks = [b for b in forbidden_blocks if b != self.win_state]
+        if self.lose_state in forbidden_blocks:
+            forbidden_blocks = [b for b in forbidden_blocks if b != self.lose_state]
+        if self.state in forbidden_blocks:
+            forbidden_blocks = [b for b in forbidden_blocks if b != self.state] 
+        for block in forbidden_blocks:
             self.board[block] = -1  # Forbidden block 
-        self.forbidden_blocks = FORBIDDEN_BLOCKS 
+        self.forbidden_blocks = forbidden_blocks 
         
         self.isEnd = False
-        self.determine = DETERMINISTIC
+        self.deterministic = deterministic
         
         
-    
     def giveReward(self):
         if self.state == self.win_state:
             return 1
@@ -59,7 +67,7 @@ class State:
         2 |
         return next position
         """
-        if self.determine:
+        if self.deterministic:
             if action == "up":
                 nxtState = (self.state[0]-1, self.state[1])
             elif action == "down":
@@ -69,8 +77,8 @@ class State:
             else:
                 nxtState = (self.state[0], self.state[1]+1)
             # if next state legal
-            if (nxtState[0] >= 0) and (nxtState[0] <= 2):  # board boundaries
-                if (nxtState[1] >= 0) and (nxtState[1] <= 3): 
+            if (nxtState[0] >= 0) and (nxtState[0] <= self.rows-1):  # board boundaries
+                if (nxtState[1] >= 0) and (nxtState[1] <= self.cols-1): 
                     if nxtState not in self.forbidden_blocks:  # forbidden block
                         return nxtState
             return self.state
