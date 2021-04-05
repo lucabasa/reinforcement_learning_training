@@ -118,22 +118,31 @@ class State:
         self.playerSymbol = 1
         
         
-    def player_action(self, player):
+    def _player_action(self, player):
         positions = self.availablePositions()
-        pl_action = player.chooseAction(positions, self.board, self.playerSymbol)
+        pl_action = player.chooseAction(positions=positions, 
+                                        current_board=self.board, 
+                                        symbol=self.playerSymbol)
         # take action and upate board state
         self.updateState(pl_action)
         board_hash = self.getHash()
         player.addState(board_hash)
         
+    
+    def _check_win(self, human=False):
         # check board status if it is end
         win = self.winner()
         if win is not None:
-            # self.showBoard()
-            # ended with player 1 either win or draw
-            self.giveReward()
-            self.p1.reset()
-            self.p2.reset()
+            # ended with player either win or draw
+            if human:
+                if win == 1:
+                    print(self.p1.name, "wins!")
+                else:
+                    print("tie!")
+            else:
+                self.giveReward()
+                self.p1.reset()
+                self.p2.reset()
             self.reset()
             return 1
         else:
@@ -146,46 +155,26 @@ class State:
                 print("Rounds {}".format(i))
             while not self.isEnd:
                 # Player 1
-                _ = self.player_action(self.p1)
-                if _ > 0:
+                self._player_action(self.p1)
+                if self._check_win() > 0:
                     break
                 # Player 2
-                _ = self.player_action(self.p2)
-                if _ > 0:
+                self._player_action(self.p2)
+                if self._check_win() > 0:
                     break
 
-                    
+    
     # play against human
-    def play2(self):
+    def play_human(self):
         while not self.isEnd:
             # Player 1
-            positions = self.availablePositions()
-            p1_action = self.p1.chooseAction(positions, self.board, self.playerSymbol)
-            # take action and upate board state
-            self.updateState(p1_action)
+            self._player_action(self.p1)
             self.showBoard()
             # check board status if it is end
-            win = self.winner()
-            if win is not None:
-                if win == 1:
-                    print(self.p1.name, "wins!")
-                else:
-                    print("tie!")
-                self.reset()
+            if self._check_win(human=True) > 0:
                 break
-
-            else:
-                # Player 2
-                positions = self.availablePositions()
-                p2_action = self.p2.chooseAction(positions)
-
-                self.updateState(p2_action)
-                self.showBoard()
-                win = self.winner()
-                if win is not None:
-                    if win == -1:
-                        print(self.p2.name, "wins!")
-                    else:
-                        print("tie!")
-                    self.reset()
-                    break
+            # Player 2
+            self._player_action(self.p2)
+            self.showBoard()
+            if self._check_win(human=True) > 0:
+                break

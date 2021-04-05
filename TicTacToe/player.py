@@ -75,7 +75,7 @@ class HumanPlayer:
     def __init__(self, name):
         self.name = name
 
-    def chooseAction(self, positions):
+    def chooseAction(self, positions, **kwargs):
         while True:
             row = int(input("Input your action row:"))
             col = int(input("Input your action col:"))
