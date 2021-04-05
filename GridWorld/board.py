@@ -4,35 +4,49 @@
 
 import numpy as np
 
-# Global variables
-BOARD_ROWS = 3
-BOARD_COLS = 4
-WIN_STATE = (0, 3)
-LOSE_STATE = (1, 3)
-START = (2, 0)
-DETERMINISTIC = True
-
 
 class State:
-    def __init__(self, state=START):
+    def __init__(self, BOARD_ROWS=3, BOARD_COLS=4, 
+                 state=(0, 0), # default ignored in the init
+                 WIN_STATE=(0, 3), LOSE_STATE=(1, 3), # default ignored in the init
+                 FORBIDDEN_BLOCKS=(1, 1),
+                 DETERMINISTIC=True):
+        
         self.board = np.zeros([BOARD_ROWS, BOARD_COLS])
-        self.board[1, 1] = -1  # Forbudden block
-        self.state = state
+        self.rows = BOARD_ROWS
+        self.cols = BOARD_COLS
+        self.win_state = (0, BOARD_COLS-1)
+        self.lose_state = (1, BOARD_COLS-1)
+        self.state = (BOARD_ROWS-1, 0)
+        
+        if not isinstance(FORBIDDEN_BLOCKS, list):
+            FORBIDDEN_BLOCKS = [FORBIDDEN_BLOCKS]
+        if self.win_state in FORBIDDEN_BLOCKS:
+            FORBIDDEN_BLOCKS = [b for b in FORBIDDEN_BLOCKS if b != self.win_state]
+        if self.lose_state in FORBIDDEN_BLOCKS:
+            FORBIDDEN_BLOCKS = [b for b in FORBIDDEN_BLOCKS if b != self.lose_state]
+        if self.state in FORBIDDEN_BLOCKS:
+            FORBIDDEN_BLOCKS = [b for b in FORBIDDEN_BLOCKS if b != self.state] 
+        for block in FORBIDDEN_BLOCKS:
+            self.board[block] = -1  # Forbidden block 
+        self.forbidden_blocks = FORBIDDEN_BLOCKS 
+        
         self.isEnd = False
         self.determine = DETERMINISTIC
         
+        
     
     def giveReward(self):
-        if self.state == WIN_STATE:
+        if self.state == self.win_state:
             return 1
-        elif self.state == LOSE_STATE:
+        elif self.state == self.lose_state:
             return -1
         else:
             return 0
     
     
     def isEndFunc(self):
-        if (self.state == WIN_STATE) or (self.state == LOSE_STATE):
+        if (self.state == self.win_state) or (self.state == self.lose_state):
             self.isEnd = True
     
     
@@ -57,17 +71,17 @@ class State:
             # if next state legal
             if (nxtState[0] >= 0) and (nxtState[0] <= 2):  # board boundaries
                 if (nxtState[1] >= 0) and (nxtState[1] <= 3): 
-                    if nxtState != (1, 1):  # forbidden block
+                    if nxtState not in self.forbidden_blocks:  # forbidden block
                         return nxtState
             return self.state
     
     
     def showBoard(self):
         self.board[self.state] = 1
-        for i in range(0, BOARD_ROWS):
-            print('-----------------')
+        for i in range(0, self.rows):
+            print('-----'*(self.cols-1)+'--')
             out = '| '
-            for j in range(0, BOARD_COLS):
+            for j in range(0, self.cols):
                 if self.board[i, j] == 1:
                     token = '*'
                 if self.board[i, j] == -1:
@@ -76,7 +90,7 @@ class State:
                     token = '0'
                 out += token + ' | '
             print(out)
-        print('-----------------')
+        print('-----'*(self.cols-1)+'--')
 
 
 
