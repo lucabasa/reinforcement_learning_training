@@ -58,6 +58,18 @@ class State:
             self.isEnd = True
     
     
+    def _chooseActionProb(self, action):
+        # For each action, there is a 10% probability of going in a perpendicular direction
+        if action == "up":
+            return np.random.choice(["up", "left", "right"], p=[0.8, 0.1, 0.1])
+        if action == "down":
+            return np.random.choice(["down", "left", "right"], p=[0.8, 0.1, 0.1])
+        if action == "left":
+            return np.random.choice(["left", "up", "down"], p=[0.8, 0.1, 0.1])
+        if action == "right":
+            return np.random.choice(["right", "up", "down"], p=[0.8, 0.1, 0.1])
+    
+    
     def nxtPosition(self, action):
         """
         action: up, down, left, right
@@ -76,12 +88,19 @@ class State:
                 nxtState = (self.state[0], self.state[1]-1)
             else:
                 nxtState = (self.state[0], self.state[1]+1)
-            # if next state legal
-            if (nxtState[0] >= 0) and (nxtState[0] <= self.rows-1):  # board boundaries
-                if (nxtState[1] >= 0) and (nxtState[1] <= self.cols-1): 
-                    if nxtState not in self.forbidden_blocks:  # forbidden block
-                        return nxtState
-            return self.state
+        else:
+            # non-deterministic
+            action = self._chooseActionProb(action)
+            self.deterministic = True
+            nxtState = self.nxtPosition(action)
+            self.deterministic = False
+            
+        # if next state legal
+        if (nxtState[0] >= 0) and (nxtState[0] <= self.rows-1):  # board boundaries
+            if (nxtState[1] >= 0) and (nxtState[1] <= self.cols-1): 
+                if nxtState not in self.forbidden_blocks:  # forbidden block
+                    return nxtState
+        return self.state
     
     
     def showBoard(self):
