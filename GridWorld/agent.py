@@ -6,7 +6,7 @@ from GridWorld.board import State
 import numpy as np
 
 class Agent:
-    def __init__(self, state=None, lr=0.2, exp_rate=0.3, verbose=False):
+    def __init__(self, *, state=None, lr=0.2, exp_rate=0.3, verbose=False):
         self.states = []
         self.actions = ["up", "down", "left", "right"]
         if state is None:
@@ -55,6 +55,35 @@ class Agent:
         self.states = []
         self.State = self.orig_state
         self.isEnd = self.State.isEnd
+        
+        
+    def _backpropagate(self):
+        # back propagate
+        reward = self.State.giveReward()
+        # explicitly assign end state to reward values
+        self.state_values[self.State.state] = reward
+        if self.verbose:
+            print("Game End Reward", reward)
+        for s in reversed(self.states):
+            reward = self.state_values[s] + self.lr*(reward - self.state_values[s])
+            self.state_values[s] = round(reward, 3)
+        self.reset()
+        
+    
+    def _find_solution(self):
+        action = self.chooseAction()
+        # append trace
+        self.states.append(self.State.nxtPosition(action))
+        if self.verbose:
+            print("current position {} action {}".format(self.State.state, action))
+        # by taking the action, it reaches the next state
+        self.State = self.takeAction(action)
+        # mark is end
+        self.State.isEndFunc()
+        if self.verbose:
+            print("nxt state", self.State.state)
+            print("---------------------")
+        self.isEnd = self.State.isEnd
     
     
     def play(self, rounds=10):
@@ -62,31 +91,10 @@ class Agent:
         while i < rounds:
             # to the end of game back propagate reward
             if self.State.isEnd:
-                # back propagate
-                reward = self.State.giveReward()
-                # explicitly assign end state to reward values
-                self.state_values[self.State.state] = reward
-                if self.verbose:
-                    print("Game End Reward", reward)
-                for s in reversed(self.states):
-                    reward = self.state_values[s] + self.lr*(reward - self.state_values[s])
-                    self.state_values[s] = round(reward, 3)
-                self.reset()
+                self._backpropagate()
                 i += 1
             else:
-                action = self.chooseAction()
-                # append trace
-                self.states.append(self.State.nxtPosition(action))
-                if self.verbose:
-                    print("current position {} action {}".format(self.State.state, action))
-                # by taking the action, it reaches the next state
-                self.State = self.takeAction(action)
-                # mark is end
-                self.State.isEndFunc()
-                if self.verbose:
-                    print("nxt state", self.State.state)
-                    print("---------------------")
-                self.isEnd = self.State.isEnd
+                self._find_solution()
     
     
     def showValues(self):
@@ -97,3 +105,72 @@ class Agent:
                 out += str(self.state_values[(i, j)]) + ' | '
             print(out)
         print('----------------------------------')
+        
+
+
+class Agent_Q(Agent):
+    def __init__(self, *, state=None, decay_gamma=0.9, lr=0.2, exp_rate=0.3, verbose=False):
+        super().__init__()
+        self.decay_gamma = decay_gamma
+        
+        # initial Q values
+        self.Q_values = {}
+        for i in range(self.State.rows):
+            for j in range(self.State.cols):
+                self.Q_values[(i, j)] = {}
+                for a in self.actions:
+                    self.Q_values[(i, j)][a] = 0  # Q value is a dict of dict
+    
+    
+    def chooseAction(self):
+        # choose action with most expected value
+        mx_nxt_reward = 0
+        action = ""
+
+        if np.random.uniform(0, 1) <= self.exp_rate:
+            action = np.random.choice(self.actions)
+        else:
+            # greedy action
+            for a in self.actions:
+                current_position = self.State.state
+                nxt_reward = self.Q_values[current_position][a]
+                if nxt_reward >= mx_nxt_reward:
+                    action = a
+                    mx_nxt_reward = nxt_reward
+            # print("current pos: {}, greedy aciton: {}".format(self.State.state, action))
+        return action
+    
+    
+    def _backpropagate(self):
+        # back propagate
+        reward = self.State.giveReward()
+        for a in self.actions:
+            self.Q_values[self.State.state][a] = reward
+        if self.verbose:
+            print("Game End Reward", reward)
+        for s in reversed(self.states):
+            current_q_value = self.Q_values[s[0]][s[1]]
+            reward = current_q_value + self.lr * (self.decay_gamma * reward - current_q_value)
+            self.Q_values[s[0]][s[1]] = round(reward, 3)
+        self.reset()
+        
+    
+    def _find_solution(self):
+        action = self.chooseAction()
+        # append trace
+        self.states.append([(self.State.state), action])
+        if self.verbose:
+            print("current position {} action {}".format(self.State.state, action))
+        # by taking the action, it reaches the next state
+        self.State = self.takeAction(action)
+        # mark is end
+        self.State.isEndFunc()
+        if self.verbose:
+            print("nxt state", self.State.state)
+            print("---------------------")
+        self.isEnd = self.State.isEnd
+        
+    
+    def showValues(self):
+        for pos in self.Q_values.keys():
+            print(pos, self.Q_values[pos])
