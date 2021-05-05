@@ -41,12 +41,14 @@ class Agent:
                     action = a
                     mx_nxt_reward = nxt_reward
             # print("current pos: {}, greedy aciton: {}".format(self.State.state, action))
+        if action == '':
+            action = np.random.choice(self.actions)
         return action
     
     
     def takeAction(self, action):
         position = self.State.nxtPosition(action)
-        st_dict = self.State.__dict__
+        st_dict = self.State.__dict__.copy()
         st_dict['state'] = position
         return State(**st_dict)    
     
@@ -86,7 +88,7 @@ class Agent:
         self.isEnd = self.State.isEnd
     
     
-    def play(self, rounds=10):
+    def train(self, rounds=10):
         i = 0
         while i < rounds:
             # to the end of game back propagate reward
@@ -95,6 +97,27 @@ class Agent:
                 i += 1
             else:
                 self._find_solution()
+                
+        self.reset()
+    
+    
+    def play(self, max_steps=100):
+        # We don't need it to explore anymore
+        self.exp_rate_bak = self.exp_rate
+        self.exp_rate = 0
+        self.verbose_bak = self.verbose
+        self.verbose = True
+        i = 0
+        while i < max_steps:
+            if self.State.isEnd:
+                print(f'Solution found in {i} steps')
+                self.exp_rate = self.exp_rate_bak
+                self.verbose = self.verbose_bak
+                self.reset()
+                break
+            else:
+                self._find_solution()
+                i += 1
     
     
     def showValues(self):
