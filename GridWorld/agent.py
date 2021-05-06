@@ -198,7 +198,7 @@ class Agent_Q(Agent):
             print("---------------------")
         self.isEnd = self.State.isEnd
         
-    
+
     def showValues(self):
         for pos in self.Q_values.keys():
             print(pos, self.Q_values[pos])
