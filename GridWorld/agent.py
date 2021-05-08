@@ -18,6 +18,8 @@ class Agent:
         self.orig_state = state
         self.verbose = verbose
         
+        np.random.seed(324)
+        
         # initial state reward
         self.state_values = {}
         for i in range(state.rows):  
@@ -37,7 +39,7 @@ class Agent:
             for a in self.actions:
                 # if the action is deterministic
                 nxt_reward = self.state_values[self.State.nxtPosition(a)]
-                if nxt_reward >= mx_nxt_reward:
+                if nxt_reward > mx_nxt_reward:
                     action = a
                     mx_nxt_reward = nxt_reward
             # print("current pos: {}, greedy aciton: {}".format(self.State.state, action))
@@ -133,11 +135,14 @@ class Agent:
 
 class Agent_Q(Agent):
     def __init__(self, *, state=None, decay_gamma=0.9, lr=0.2, exp_rate=0.3, verbose=False):
-        super().__init__()
+        super().__init__(lr=lr, exp_rate=exp_rate, verbose=verbose)
         if state is None:
             state = State(deterministic=False)
         self.State = state
         self.decay_gamma = decay_gamma
+        self.orig_state = state
+        
+        np.random.seed(324)
         
         # initial Q values
         self.Q_values = {}
@@ -160,7 +165,7 @@ class Agent_Q(Agent):
             for a in self.actions:
                 current_position = self.State.state
                 nxt_reward = self.Q_values[current_position][a]
-                if nxt_reward >= mx_nxt_reward:
+                if nxt_reward > mx_nxt_reward:
                     action = a
                     mx_nxt_reward = nxt_reward
             # print("current pos: {}, greedy aciton: {}".format(self.State.state, action))
